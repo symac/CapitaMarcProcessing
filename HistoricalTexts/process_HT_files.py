@@ -27,6 +27,9 @@ for subdir, dirs, files in os.walk("."):
 				else:
 					url = "%s%s" % (prefix, urllib.quote_plus(f856.get_subfields('u')[0]))
 					f856.delete_subfield("u")
+					
+					# We need to remove the existing $z
+					f856.delete_subfield("z")
 					f856.add_subfield("u", url)
 					f856.add_subfield("z", "Click here to access electronic holdings.")
 			out.write(record.as_marc())

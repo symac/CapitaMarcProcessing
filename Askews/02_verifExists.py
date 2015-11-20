@@ -2,14 +2,18 @@
 # -*- coding: utf-8 -*-
 from pymarc import MARCReader, marc8_to_unicode
 import os, urllib, re, json
-
+from datetime import date
+import sys
 nb_total = 0
 nb_total_new = 0
 filename = "mergedFile.mrc"
-reader = MARCReader(open("%s" % filename), force_utf8=True);
+reader = MARCReader(open("TMP/%s" % filename), force_utf8=True);
 
-outfile = open("mergedFile-cleaned.mrc", "w")
-outfile_exception = open("mergedFile-manually-handle.txt", "w")
+today =  date.today()
+
+outfile = open("OUT/mergedFile-loading-ok-%s.mrc" % today, "w")
+outfile_exception = open("OUT/mergedFile-manually-handle-%s.txt" % today, "w")
+
 
 nb = 0
 nb_new = 0
@@ -17,12 +21,17 @@ nb_keep = 0
 for record in reader:
 	nb += 1
 	f001 = record.get_fields("001")[0].data
-	isbn = str(record.get_fields("020")[0].value()).replace(" (e-book)", "")
+	isbn = str(record.get_fields("020")[0].value())
+	isbn = isbn.replace(" (e-book) :", "")
+	isbn = isbn.replace(" (e-book)", "")
+	
 
 	keepRecord = True
 	
 	if not re.match(r"^[\dX]+$", isbn):
+		print record.get_fields("020")[0].value()
 		print "Error with ISBN #%s# [%s]" % (isbn, f001)
+		sys.exit()
 	
 	url = "http://capitadiscovery.co.uk/yorksj/items.json?query=isbn%3A" + isbn + "&target=catalogue"
 	response = urllib.urlopen(url)
@@ -52,10 +61,9 @@ for record in reader:
 									print "TOO MUCH SIZE"
 									exit()
 		
-		if hasUrl:
+		if hasUrl and bibid:
 			if "vlebooks" in hasUrlFull:
-				keepRecord = False
-				print "EXISTS with URL on vlebooks %s [%s]" % (f001, bibid)
+				print "EXISTS with URL on vlebooks %s [%s], will be overwritten" % (f001, bibid)
 			else:
 				print "EXISTS with URL outside vlebooks %s [%s]" % (f001, bibid)
 				print hasUrlFull

@@ -2,9 +2,23 @@
 # -*- coding: utf-8 -*-
 from pymarc import MARCReader, marc8_to_unicode, record
 import os, urllib
-
+import sys
 nb_total = 0
 nb_total_new = 0
+
+# Loading files from previous loads to get their 001
+
+f001previous = {}
+for subdir, dirs, files in os.walk("SRC/PREVIOUS"):
+	for f in sorted([fi for fi in files if fi.endswith("USM")], reverse=True):
+		filename = os.path.join(subdir,f)
+		reader = MARCReader(open("%s" % filename))
+		
+		for record in reader:
+			f001 = record.get_fields("001")[0].data
+			f001previous[f001] = f
+
+print "Records loaded during previous loads: %s" % len(f001previous)
 
 '''
 This file will process the Dawsonera files for the following enhancements:
@@ -13,9 +27,11 @@ This file will process the Dawsonera files for the following enhancements:
 f001done = {}
 outputFilename = "TMP/global-step1.mrc"
 out = open(outputFilename, 'wb');
-for subdir, dirs, files in os.walk("SRC/TMP"):
-	for f in sorted([fi for fi in files if fi.endswith("USM")], reverse=True):
-		filename = os.path.join(subdir,f)
+
+files = [f for f in os.listdir('SRC')]
+for f in files:
+	filename = os.path.join("SRC",f)
+	if os.path.isfile(filename):
 		print "# # # # # # # # # # # #"
 		print "Reading: %s" % filename
 		reader = MARCReader(open("%s" % filename))
@@ -25,8 +41,11 @@ for subdir, dirs, files in os.walk("SRC/TMP"):
 		for record in reader:
 			f001 = record.get_fields("001")[0].data
 
-			if f001 in f001done:
-				#print "Skipping %s" % f001
+			if f001 in f001previous:
+				print "Skipping %s {previous load : %s}" % (f001, f001previous[f001])
+				pass
+			elif f001 in f001done:
+				print "Skipping %s {current load}" % f001
 				pass
 			else:
 				f001done[f001] = f001

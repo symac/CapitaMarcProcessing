@@ -72,6 +72,10 @@ for subdir, dirs, files in os.walk("SRC"):
 					else:
 						url = "%s%s" % (prefix, f856.get_subfields('u')[0])
 						f856.delete_subfield("u")
+						url = url.replace("&db=nlabk", "")
+						if "db=nlebk" not in url:
+							url += "&db=nlebk"
+						print url
 						f856.add_subfield("u", url)
 						f856.add_subfield("z", "View eBook online.")
 						out.write(record.as_marc())
